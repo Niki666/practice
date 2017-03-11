@@ -1,28 +1,28 @@
 #coding=utf-8
 import urllib
-import urllib2
 import re
-import urllib
+from bs4 import BeautifulSoup
 
-def download_page(url):
-    request = urllib2.Request(url)
-    response = urllib.urlopen(request)
-    data = response.read()
-    return data
+path = 'http://www.cse.cqu.edu.cn'
+def getHtml(url):
+    page = urllib.urlopen(url)
+    html = page.read()
 
-def get_image(html):
-    regx = r'\/teacherspic\/*\.jpg'
-    pattern = re.compile(regx)
-    get_imag = re.findall(pattern,repr(html))
-    num = 1
-    for img in  get_imag:
-        image = download_page(img)
-        with open('%s.jpg'%num,'wb') as fb:
-            fb.write(image)
-            num += 1
-            print ('working'%num)
-    return
+    return html
 
-url = 'http://www.cse.cqu.edu.cn/FrontPage/TeacherPage'
-html = download_page(url)
-get_image(html)
+def getImg(html):
+    bs0bj = BeautifulSoup(html,"html.parser")
+    print bs0bj
+    imglist = bs0bj.findAll("img",{"src":re.compile("\/teacherspic\/.*\.jpg")})
+    print imglist
+    x = 0
+    for imgurl in imglist:
+        url = path + imgurl['src'].encode('utf8')
+        urllib.urlretrieve(url, '.\\%d.jpg' % x)
+        x += 1
+    return imglist
+
+
+html = getHtml("http://www.cse.cqu.edu.cn/FrontPage/TeacherPage/")
+
+print getImg(html)
