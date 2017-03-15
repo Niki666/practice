@@ -1,0 +1,2 @@
+import smoP
+smoP.testRbf()
