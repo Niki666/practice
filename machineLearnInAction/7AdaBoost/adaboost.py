@@ -21,6 +21,22 @@ def loadDataSet(fileName):      #general function to parse tab -delimited floats
         labelMat.append(float(curLine[-1]))
     return dataMat,labelMat
 
+#自适应加载数据
+def loadDataSet(fileName):
+    numFeat = len(open(fileName).readline().split('\t'))
+    dataMat = []
+    labelMat = []
+    fr = open(fileName)
+    for line in fr.readlines():
+        lineArr = []
+        curLine = line.strip().split('\t')
+        for i in range(numFeat - 1):
+            lineArr.append(float(curLine[i]))
+        dataMat.append(lineArr)
+        labelMat.append(float(curLine[-1]))
+    return dataMat,labelMat
+
+
 def stumpClassify(dataMatrix,dimen,threshVal,threshIneq):
     retArray = np.ones((np.shape(dataMatrix)[0],1))
     if threshIneq == 'lt':
@@ -94,7 +110,7 @@ def adaBoostTrainDS(dataArr,classLabels,numIt=40): #数据集、类别标签、�
         print"toler error: ",errorRate,"\n"
         if errorRate == 0.0:
             break
-    return weakClassArr
+    return weakClassArr,aggClassEst
 
 #AdaBoost分类函数
 def adaClassify(datToClass,classifierArr):
@@ -107,9 +123,38 @@ def adaClassify(datToClass,classifierArr):
         print aggClassEst
     return np.sign(aggClassEst)
 
+#ROC曲线的绘制及AUC计算函数
+def plotROC(predStrengths,classLabels):
+    import matplotlib.pyplot as plt
+    cur = (1.0,1.0)  #该元祖保留的是绘制光标的位置
+    ySum = 0.0 #用于计算AUC的值
+    numPosClas = sum(np.array(classLabels)==1.0)  #数组过滤计算正类数目
+    yStep = 1/float(numPosClas)  #y轴步长
+    xStep = 1/float(len(classLabels)-numPosClas)
+    sortedIndicies = predStrengths.argsort()  #索引排序
+    fig = plt.figure()
+    fig.clf()
+    ax = plt.subplot(111)
+    for index in sortedIndicies.tolist()[0]:  #Return the array as a (possibly nested) list
+        if classLabels[index] == 1.0:
+            delX = 0
+            delY = yStep
+        else:
+            delX = xStep
+            delY = 0
+            ySum += cur[1]
+        ax.plot([cur[0],cur[0]-delX],[cur[1],cur[1]-delY],c='b')
+        cur = (cur[0]-delX,cur[1]-delY)
+    ax.plot([0,1],[0,1],'b--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC curve for AdaBoost Horse Colic Detection System')
+    ax.axis([0,1,0,1])
+    plt.show()
+    print "the Area Under the Curver is: ",ySum*xStep
 
-datMat,classLabels = loadSimpData()
-classifierArray = adaBoostTrainDS(datMat,classLabels,9)
-print classifierArray
+datArr,labeLArr = loadDataSet('horseColicTraining2.txt')
+classifierArray,aggClassEst = adaBoostTrainDS(datArr,labeLArr,10)
+plotROC(aggClassEst.T,labeLArr)
 
 
